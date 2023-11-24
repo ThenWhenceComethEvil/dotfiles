@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+# vim: ft=bash tw=80
+#
+# General idea:
+#  `dot add` moves a local dot{file,dir} to a directory here
+#     - optionally under a subdirectory to serve as a "tag"
+#     - e.g., the same file can have slight differences across tags
+#     - just use `nvim -d` to manage differences between tags
+#     - helps for macOS bashrc vs. arch bashrc
+#  `dot deploy` replaces the current file with the one from here
+#     - don't know if I want to do it with symlinks or not
+#     - before any destructive action is taken, saves backup of current file
+#  * safe:
+#     - in-place, versioned backups before replacing any file
+#  * easy:
+#     - auto-completion
+#     - flexible organizational system
+
+set -e
+
+declare -g  PROGDIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd )
+declare -g  DATABASE="${PROGDIR##*/}/database"
+declare -gA MAP=()
+
+touch "${DATABASE}" -a
+mkdir -p "${PROGDIR}/dotfiles"
+mkdir -p "${PROGDIR}/backups/{database,dotfiles}"
+
+# PROGDIR/
+#  +-- database
+#  +-- dotfiles/
+#  |    +-- bash/
+#  |    |    `-- .bashrc
+#  |    `-- nvim/
+#  `-- backups/
+#       +-- database/
+#       |    +-- database.2023-10-14
+#       |    `-- database.2023-11-24
+#       `-- dotfiles/
+#            +-- bash.2023-10-14
+#            +-- bash.2023-11-24
+#            `-- nvim.2023-11-24
+    
+function usage {
+   declare -i status="$1"
+   cat <<EOF
+
+usage: ${BASH_SOURCE[0]##*/} command [option]
+
+commands:
+   add FILE          assume ownership of \$FILE
+   deploy FILE       symlink owned \$FILE to host
+   ls                print owned files
+
+options:
+   -v | --verbose    extra output/info, more v's == more verbose
+
+EOF
+exit "$status"
+}
+
+
+function load_data {
+   while IFS=$'\t' read -r src dst ; do
+      MAP["${src}"]="${dst}"
+   done < "${DATABASE}"
+}
+
+
+function write_data {
+   local -a _install=(
+      --compare
+      --backup='numbered'
+      --preserve-timestamps
+      ${__verbose:+--verbose}
+   )
+   install "${_install[@]}" "${DATABASE}" "${PROGDIR}/backups/database/"
+
+   for src in "${!MAP[@]}" ; do
+      local dst="${MAP["${src}"]}"
+      printf '%s\t%s\n' "${src}" "${dst}"
+   done > "${DATABASE}"
+}
+
+
+function add_entry {
+   # `dot add ~/.bashrc bash/laptop/.bashrc`
+   #          ^- src     ^- dst
+   #
+   # Must...
+   #  strip leading ${HOME}
+   #  fail if not found
+
+   # `src' and `dst' appear flipped, but where the file ORIGINATES is where it
+   # must be deployed back to: the destination.
+   local dst="$1"  relative_dst="${dst/$HOME}"
+   local src="$2"  relative_src="${PROGDIR}/dotfiles/${src}"
+
+   if [[ ! $dst || ! -f $dst ]] ; then
+      printf 'File does not exist\n'
+      printf '   %s\n'  "$dst"
+      exit 1
+   fi
+
+   if [[ $dst == "${relative_dst}" ]] ; then
+      printf '[dot] only owns files/dirs under $HOME/\n'
+      printf '  %s\n'  "$dst"
+      exit 1
+   fi
+
+   printf 'Assuming ownership of\n'
+   printf '   ~/%s\n'  "$relative_dst"
+   printf 'as\n'
+   printf '   %s\n'  "${src}"
+}
+
+
+function list_tree {
+   # `cd` just kinda nice for better formatting with `tree`. Shows directories
+   # relative to ./dotfiles/ instead of wherever you were in the filesystem.
+   ( cd "${PROGDIR}" && tree --prune --noreport -a -I .hg dotfiles/ ) || {
+      printf 'Unable to cd to %s.\n' "$PROGDIR"
+      exit 1
+   }
+}
+
+
+if (( ! $# )) ; then
+   usage 1
+fi
+
+## Flags.
+declare -i __verbose=0
+
+while (( $# )) ; do
+   case "$1" in
+      -h|--help)
+         usage 0 ;;
+
+      -v|--verbose)
+         shift ; (( ++__verbose )) ;;
+
+      add)     shift ; add_entry    "$@"  ;;
+      deploy)  shift ; deploy_entry "$@"  ;;
+   esac
+done
+
+
