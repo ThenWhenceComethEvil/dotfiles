@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=bash tw=80
 #
+#-------------------------------------------------------------------------------
 # General idea:
 #  `dot add` moves a local dot{file,dir} to a directory here
 #     - optionally under a subdirectory to serve as a "tag"
@@ -15,45 +16,55 @@
 #  * easy:
 #     - auto-completion
 #     - flexible organizational system
+#
+#--- TODO ----------------------------------------------------------------------
+# [ ] More flexible argument parsing
+#     - allow for subcommand --help
+#     - shift non-flag args into params[], the 1st of which is assumed to be the
+#       subcommand? doesn't allow for `dot add --help` though, would require
+#       something like `dot help add`. Maybe use how I did it in `conf` as a
+#       reference?
+# [ ] Easy remove backups
+#     - a little annoying if some of the 'owned' dotfiles will actually be
+#       directories, like ~/.config/nvim. Don't want to have the script slamming
+#       `rm -rf`s necessarily. Lot of potential for oof.
+# [ ] Validate that entries in ./dotfiles/ match up with entires in ./database
+#
+#-------------------------------------------------------------------------------
 
 set -e
 
-declare -g  PROGDIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd )
-declare -g  DATABASE="${PROGDIR##*/}/database"
-declare -gA MAP=()
+declare -g  THIS=$( realpath "${BASH_SOURCE[0]}" )
+declare -g  PROGDIR=$( cd "$(dirname "${THIS}")" ; pwd )
+declare -g  DATABASE="${PROGDIR}/database"
+
+declare -gA MAP=()   # { source -> dest }
+#declare -gA RMAP=()  # { dest -> source[] }
+#declare -g  SOURCE_LIST=
+#declare -gi _SOURCE_LIST_IDX=0
+## For easier diff functionality. If the destination is a file, exec `nvim -d`
+## for all sources that refer to the destination.
 
 touch "${DATABASE}" -a
 mkdir -p "${PROGDIR}/dotfiles"
-mkdir -p "${PROGDIR}/backups/{database,dotfiles}"
 
 # PROGDIR/
 #  +-- database
-#  +-- dotfiles/
-#  |    +-- bash/
-#  |    |    `-- .bashrc
-#  |    `-- nvim/
-#  `-- backups/
-#       +-- database/
-#       |    +-- database.2023-10-14
-#       |    `-- database.2023-11-24
-#       `-- dotfiles/
-#            +-- bash.2023-10-14
-#            +-- bash.2023-11-24
-#            `-- nvim.2023-11-24
+#  `-- dotfiles/
+#       +-- bash/
+#       |    `-- .bashrc
+#       `-- nvim/
     
 function usage {
    declare -i status="$1"
    cat <<EOF
 
-usage: ${BASH_SOURCE[0]##*/} command [option]
+usage: ${THIS##*/} [option] command
 
 commands:
    add FILE          assume ownership of \$FILE
    deploy FILE       symlink owned \$FILE to host
    ls                print owned files
-
-options:
-   -v | --verbose    extra output/info, more v's == more verbose
 
 EOF
 exit "$status"
@@ -61,21 +72,18 @@ exit "$status"
 
 
 function load_data {
-   while IFS=$'\t' read -r src dst ; do
+   local src dst
+
+   declare -p DATABASE
+   cat $DATABASE
+
+   while IFS=$'\t' read -r dst src ; do
       MAP["${src}"]="${dst}"
    done < "${DATABASE}"
 }
 
 
 function write_data {
-   local -a _install=(
-      --compare
-      --backup='numbered'
-      --preserve-timestamps
-      ${__verbose:+--verbose}
-   )
-   install "${_install[@]}" "${DATABASE}" "${PROGDIR}/backups/database/"
-
    for src in "${!MAP[@]}" ; do
       local dst="${MAP["${src}"]}"
       printf '%s\t%s\n' "${src}" "${dst}"
@@ -83,9 +91,16 @@ function write_data {
 }
 
 
+#function new_src_list {
+#   local name="__SOURCE_LIST_$(( ++_SOURCE_LIST_IDX ))"
+#   declare -ga "$name"
+#   declare -g SOURCE_LIST="$name"
+#}
+
+
 function add_entry {
    # `dot add ~/.bashrc bash/laptop/.bashrc`
-   #          ^- src     ^- dst
+   #          ^- dst    ^- src
    #
    # Must...
    #  strip leading ${HOME}
@@ -93,8 +108,8 @@ function add_entry {
 
    # `src' and `dst' appear flipped, but where the file ORIGINATES is where it
    # must be deployed back to: the destination.
-   local dst="$1"  relative_dst="${dst/$HOME}"
-   local src="$2"  relative_src="${PROGDIR}/dotfiles/${src}"
+   local dst="$1"
+   local src="$2"
 
    if [[ ! $dst || ! -f $dst ]] ; then
       printf 'File does not exist\n'
@@ -102,47 +117,98 @@ function add_entry {
       exit 1
    fi
 
+   if [[ $dst =~ ^[/~] ]] ; then
+      printf 'Destination may not be absolute. Is relative to\n'
+      printf '   %s\n'  "${PROGDIR}"
+      exit 1
+   fi
+
+   local relative_dst="${dst#$HOME/}"
    if [[ $dst == "${relative_dst}" ]] ; then
       printf '[dot] only owns files/dirs under $HOME/\n'
       printf '  %s\n'  "$dst"
       exit 1
    fi
 
+   # Hoping to catch some errors early, save time before parsing the data file.
+   load_data
+
+   if [[ "${MAP[$src]}" ]] ; then
+      printf '[dot] already owns ~/%s\n'  "${relative_dst}"
+      printf '   %s\n'  "${MAP[$src]}" 
+   fi
+
    printf 'Assuming ownership of\n'
    printf '   ~/%s\n'  "$relative_dst"
    printf 'as\n'
-   printf '   %s\n'  "${src}"
+   printf '   %s\n'  "${relative_src}"
 }
 
 
 function list_tree {
    # `cd` just kinda nice for better formatting with `tree`. Shows directories
    # relative to ./dotfiles/ instead of wherever you were in the filesystem.
-   ( cd "${PROGDIR}" && tree --prune --noreport -a -I .hg dotfiles/ ) || {
+   ( cd "${PROGDIR}" && tree --prune --noreport -a -I .hg dotfiles ) || {
       printf 'Unable to cd to %s.\n' "$PROGDIR"
       exit 1
    }
 }
 
 
-if (( ! $# )) ; then
-   usage 1
-fi
-
-## Flags.
-declare -i __verbose=0
-
-while (( $# )) ; do
-   case "$1" in
-      -h|--help)
-         usage 0 ;;
-
-      -v|--verbose)
-         shift ; (( ++__verbose )) ;;
-
-      add)     shift ; add_entry    "$@"  ;;
-      deploy)  shift ; deploy_entry "$@"  ;;
-   esac
-done
+#function purge_backups {
+#   local -i count="$1"
+#   local dir="$2"
+#
+#   local -a stat=(
+#      --printf='%Y %n\n'
+#      "${dir}"/*.~*
+#   )
+#
+#   stat "${stat[@]}" 2>/dev/null \
+#   | sort                        \
+#   | cut -d' ' -f2               \
+#   | head --lines=-5             \
+#   | xargs rm -v
+#}
 
 
+case "$1" in
+   '' | -h | --help)
+      usage 0 ;;
+
+   add)
+      shift ; add_entry "$@" ;;
+
+   deploy)
+      shift ; deploy_entry "$@" ;;
+
+   ls | tree)
+      shift ; list_tree "$@" ;;
+
+
+   ## While testing.
+   t) load_data ; declare -p MAP ;;
+
+
+   ## TODO: purge is actually gonna be a bit more complex, will likely have to
+   ## do things based off the entries in the database.
+   #
+   #purge)
+   #   shift
+   #   if [[ ! "$1" =~ [[:digit:]]+ ]] ; then
+   #      printf '[purge] expecting a numeric argument.\n'
+   #      exit 1
+   #   fi
+   #   purge_backups "$1"  "${PROGDIR}"/backups/dotfiles
+   #   purge_backups "$1"  "${PROGDIR}"/backups/database
+   #   ;;
+
+   *) if [[ -f $1 || -d $1 ]] ; then
+         printf 'No command specified. Perhaps you meant:\n'
+         printf "   \`${THIS} add  ${1/$HOME/'~'}  $2\`\n"
+      else
+         printf 'Unknown option: %s\n' "$1"
+      fi
+      exit 1
+      ;;
+esac
