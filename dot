@@ -18,17 +18,13 @@
 #     - flexible organizational system
 #
 #--- TODO ----------------------------------------------------------------------
-# [ ] More flexible argument parsing
-#     - allow for subcommand --help
-#     - shift non-flag args into params[], the 1st of which is assumed to be the
-#       subcommand? doesn't allow for `dot add --help` though, would require
-#       something like `dot help add`. Maybe use how I did it in `conf` as a
-#       reference?
-# [ ] Easy remove backups
-#     - a little annoying if some of the 'owned' dotfiles will actually be
-#       directories, like ~/.config/nvim. Don't want to have the script slamming
-#       `rm -rf`s necessarily. Lot of potential for oof.
 # [ ] Validate that entries in ./dotfiles/ match up with entires in ./database
+#
+#-------------------------------------------------------------------------------
+# Thinkies:
+# Validation
+#  - when adding, `src' may not already exist
+#  - when adding, `dst` may not be a symlink already
 #
 #-------------------------------------------------------------------------------
 
@@ -155,23 +151,6 @@ function list_tree {
 }
 
 
-#function purge_backups {
-#   local -i count="$1"
-#   local dir="$2"
-#
-#   local -a stat=(
-#      --printf='%Y %n\n'
-#      "${dir}"/*.~*
-#   )
-#
-#   stat "${stat[@]}" 2>/dev/null \
-#   | sort                        \
-#   | cut -d' ' -f2               \
-#   | head --lines=-5             \
-#   | xargs rm -v
-#}
-
-
 case "$1" in
    '' | -h | --help)
       usage 0 ;;
@@ -189,19 +168,6 @@ case "$1" in
    ## While testing.
    t) load_data ; declare -p MAP ;;
 
-
-   ## TODO: purge is actually gonna be a bit more complex, will likely have to
-   ## do things based off the entries in the database.
-   #
-   #purge)
-   #   shift
-   #   if [[ ! "$1" =~ [[:digit:]]+ ]] ; then
-   #      printf '[purge] expecting a numeric argument.\n'
-   #      exit 1
-   #   fi
-   #   purge_backups "$1"  "${PROGDIR}"/backups/dotfiles
-   #   purge_backups "$1"  "${PROGDIR}"/backups/database
-   #   ;;
 
    *) if [[ -f $1 || -d $1 ]] ; then
          printf 'No command specified. Perhaps you meant:\n'
