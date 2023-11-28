@@ -1,3 +1,1 @@
-syntax: regexp
-
-^database
+syntax: glob
