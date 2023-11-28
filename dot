@@ -159,14 +159,16 @@ function cmd_add {
    fi
 
    printf '\033[37;1mmake local backup...\033[0m\n'
-   echo  cp -vT --backup='existing' "$abs_dst" "${abs_dst}.bak"
+   cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak"
 
    printf '\n\033[37;1massume ownership...\033[0m\n'
-   echo  mkdir -vp "${abs_src%/*}"
-   echo  mv -vn "$abs_dst" "$abs_src"
+   mkdir -vp "${abs_src%/*}"
+   mv -vn "$abs_dst" "$abs_src"
 
    printf '\n\033[37;1mlink back...\033[0m\n'
-   echo  ln -v "$abs_src" "$abs_dst"
+   ln -sv "$abs_src" "$abs_dst"
+
+   store_data
 
    ## THINKIES:
    ## Unsure if I want to auto add->commit. Doesn't give the opportunity to
@@ -175,10 +177,8 @@ function cmd_add {
    ## committing.
 
    printf '\n\033[37;1madd & commit...\033[0m\n'
-   echo  $hg add "$abs_src"
-   echo  $hg commit -m "Add ${dst} as ${src}"
-
-   store_data
+   $hg add "$abs_src"
+   $hg commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
 }
 
 
