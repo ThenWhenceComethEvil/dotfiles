@@ -12,7 +12,7 @@
 #
 #-------------------------------------------------------------------------------
 
-set -e
+set -eo pipefail
 
 declare -g  THIS=$( realpath "${BASH_SOURCE[0]}" )
 declare -g  PROGDIR="${THIS%/*}"
@@ -66,7 +66,10 @@ function store_data {
    for src in "${!MAP[@]}" ; do
       local dst="${MAP["$src"]}"
       printf '%s\t%s\n' "$src" "$dst"
-   done > "${DATABASE}"
+   done                        \
+   | sort -k2                  \
+   | column -t -s$'\t' -o$'\t' \
+   > "${DATABASE}"
 }
 
 
@@ -155,14 +158,14 @@ function cmd_add {
       ls -l "$abs_src"
    fi
 
-   printf 'make local backup...\n'
-   echo  cp -v --backup='existing' "$abs_dst" "${abs_dst}.bak"
+   printf '\033[37;1mmake local backup...\033[0m\n'
+   echo  cp -vT --backup='existing' "$abs_dst" "${abs_dst}.bak"
 
-   printf '\nassume ownership...\n'
+   printf '\n\033[37;1massume ownership...\033[0m\n'
    echo  mkdir -vp "${abs_src%/*}"
    echo  mv -vn "$abs_dst" "$abs_src"
 
-   printf '\nlink back...\n'
+   printf '\n\033[37;1mlink back...\033[0m\n'
    echo  ln -v "$abs_src" "$abs_dst"
 
    ## THINKIES:
@@ -171,9 +174,9 @@ function cmd_add {
    ## any of these commands often enough to warrant it automatically adding &
    ## committing.
 
-   printf '\nadd & commit...\n'
+   printf '\n\033[37;1madd & commit...\033[0m\n'
    echo  $hg add "$abs_src"
-   echo  $hg commit -m "Add ${rel_dst} as ${src}"
+   echo  $hg commit -m "Add ${dst} as ${src}"
 
    store_data
 }
@@ -214,6 +217,23 @@ function cmd_deploy {
 }
 
 
+function cmd_diff {
+   local target="$1"
+   local -a files=()
+
+   local src dst
+   while read -r src dst ; do
+      if [[ $dst == "$target" ]] ; then
+         files+=( "$src" )
+      fi
+   done < "$DATABASE"
+
+   if (( ${#files[@]} )) ; then
+      exec nvim -d "${files[@]}" 
+   fi
+}
+
+
 case "$1" in
    '' | -h | --help)
       usage 0 ;;
@@ -235,12 +255,11 @@ case "$1" in
    validate)
       validate_database ;;
 
-   # Repository commands.
+   diff)
+      cmd_diff "${@:2}" ;;
+
    hg)
       hg -R "${PROGDIR}" "${@:2}" ;;
-
-   #diff)
-   #   hg -R "${PROGDIR}" diff "${@:2}" ;;
 
    *) usage 1 ;;
 esac
