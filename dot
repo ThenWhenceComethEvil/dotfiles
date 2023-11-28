@@ -170,15 +170,9 @@ function cmd_add {
 
    store_data
 
-   ## THINKIES:
-   ## Unsure if I want to auto add->commit. Doesn't give the opportunity to
-   ## potentially modify .hgignore if needed. I feel like I'm unlikely to use
-   ## any of these commands often enough to warrant it automatically adding &
-   ## committing.
-
-   printf '\n\033[37;1madd & commit...\033[0m\n'
-   $hg add "$abs_src"
-   $hg commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
+   #printf '\n\033[37;1madd & commit...\033[0m\n'
+   #$hg add "$abs_src"
+   #$hg commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
 }
 
 
