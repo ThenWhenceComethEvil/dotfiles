@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vim: ft=bash tw=80
-# shellcheck disable=SC2155,SC2016,SC2295
+# shellcheck disable=SC2155,SC2016,SC2295,SC2086
 #
 #--- TODO ----------------------------------------------------------------------
 # [ ] trap rollback on error
@@ -156,20 +156,24 @@ function cmd_add {
    fi
 
    printf 'make local backup...\n'
-   cp -v --backup='existing' "$abs_dst" "${abs_dst}.bak"
+   echo  cp -v --backup='existing' "$abs_dst" "${abs_dst}.bak"
 
    printf '\nassume ownership...\n'
-   mkdir -vp "${abs_src%/*}"
-   mv -vn "$abs_dst" "$abs_src"
+   echo  mkdir -vp "${abs_src%/*}"
+   echo  mv -vn "$abs_dst" "$abs_src"
 
    printf '\nlink back...\n'
-   ln -v "$abs_src" "$abs_dst"
+   echo  ln -v "$abs_src" "$abs_dst"
 
-   # shellcheck disable=SC2086
-   $hg -v add "$abs_src"
+   ## THINKIES:
+   ## Unsure if I want to auto add->commit. Doesn't give the opportunity to
+   ## potentially modify .hgignore if needed. I feel like I'm unlikely to use
+   ## any of these commands often enough to warrant it automatically adding &
+   ## committing.
 
-   # shellcheck disable=SC2086
-   $hg -v commit -m "Add ${rel_dst} as ${dst}"
+   printf '\nadd & commit...\n'
+   echo  $hg add "$abs_src"
+   echo  $hg commit -m "Add ${rel_dst} as ${src}"
 
    store_data
 }
