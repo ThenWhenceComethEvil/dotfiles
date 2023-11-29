@@ -166,16 +166,16 @@ function cmd_add {
    local tmpfile=$( mktemp --tmpdir="${PROGDIR}/logs" log.XXX )
    mv -v --backup='numbered' "$tmpfile" "$LOGFILE"
 
-   {  printf '\n\033[37;1mmake local backup...\033[0m\n' >&2
-      cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak"
+   printf '\n\033[37;1mmake local backup...\033[0m\n' >&2
+   cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak" \
+      &>> "$LOGFILE"
 
-      printf '\n\033[37;1massume ownership...\033[0m\n' >&2
-      mkdir -vp "${abs_src%/*}"
-      mv -vn "$abs_dst" "$abs_src"
+   printf '\n\033[37;1massume ownership...\033[0m\n' >&2
+   mkdir -vp "${abs_src%/*}"     &>> "$LOGFILE"
+   mv -vn "$abs_dst" "$abs_src"  &>> "$LOGFILE"
 
-      printf '\n\033[37;1mlink back...\033[0m\n' >&2
-      ln -sv "$abs_src" "$abs_dst"
-   } | tee -a "$LOGFILE"
+   printf '\n\033[37;1mlink back...\033[0m\n' >&2
+   ln -sv "$abs_src" "$abs_dst"  &>> "$LOGFILE"
 
    DATA["$src"]="$rel_dst"
    store_data
