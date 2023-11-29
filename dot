@@ -17,8 +17,8 @@ set -eo pipefail
 declare -g  THIS=$( realpath "${BASH_SOURCE[0]}" )
 declare -g  PROGDIR="${THIS%/*}"
 declare -g  DATABASE="${PROGDIR}/database"
-declare -gA MAP=()   # { source -> dest }
-#declare -gA RMAP=()  # { dest -> source[] }
+declare -gA DATA=()   # { source -> dest }
+#declare -gA RDATA=()  # { dest -> source[] }
 #declare -g  SOURCE_LIST=
 #declare -gi _SOURCE_LIST_IDX=0
 ## For easier diff functionality. If the destination is a file, exec `nvim -d`
@@ -26,6 +26,9 @@ declare -gA MAP=()   # { source -> dest }
 
 touch "${DATABASE}" -a
 mkdir -p "${PROGDIR}/dotfiles"
+
+mkdir -p "${PROGDIR}/logs"
+declare -g LOGFILE="${PROGDIR}/logs/log"
 
 declare -g hg="hg -R ${PROGDIR}"
 
@@ -55,7 +58,7 @@ exit "$status"
 function load_data {
    local src dst
    while IFS=$'\t' read -r src dst ; do
-      MAP["$src"]="$dst"
+      DATA["$src"]="$dst"
    done < "$DATABASE"
 }
 
@@ -63,8 +66,8 @@ function load_data {
 # TODO: can be a bit risky, gotta make sure not to truncate the file if error.
 function store_data {
    local src dst
-   for src in "${!MAP[@]}" ; do
-      local dst="${MAP["$src"]}"
+   for src in "${!DATA[@]}" ; do
+      local dst="${DATA["$src"]}"
       printf '%s\t%s\n' "$src" "$dst"
    done                        \
    | sort -k2                  \
@@ -82,15 +85,15 @@ function validate_add {
       exit 1
    fi
 
-   if [[ ! -f $dst && ! -d $dst ]] ; then
-      printf 'dst does not exist\n'
-      printf '   %s\n'  "$dst"
-      exit 1
-   fi
-
    if [[ -L $dst ]] ; then
       printf 'dst already a symlink:\n'
       stat --printf '%N\n'  "$dst"
+      exit 1
+   fi
+
+   if [[ ! -f $dst && ! -d $dst ]] ; then
+      printf 'dst does not exist\n'
+      printf '   %s\n'  "$dst"
       exit 1
    fi
 
@@ -115,13 +118,13 @@ function validate_database {
    local -a deleted=()
 
    local _k
-   for _k in "${!MAP[@]}" ; do
-      local _v="${MAP["$_k"]}"
+   for _k in "${!DATA[@]}" ; do
+      local _v="${DATA["$_k"]}"
       deleted["$_k"]="$_v"
    done
 
    local src
-   for src in "${!MAP[@]}" ; do
+   for src in "${!DATA[@]}" ; do
       if [[ -e "${PROGDIR}/dotfiles/${src}" ]] ; then
          unset 'deleted[$src]'
       fi
@@ -147,32 +150,41 @@ function cmd_add {
    abs_dst=$( realpath "$dst" )
    rel_dst="${abs_dst#${HOME}/}"
 
-   if [[ "${MAP[$src]}" ]] ; then
+   if [[ "${DATA[$src]}" ]] ; then
       printf 'mapping already exists from\n'
-      printf ' %s -> %s\n'  "$src"  "${MAP[$src]}"
+      printf ' %s -> %s\n'  "$src"  "${DATA[$src]}"
       exit 1
    fi
 
    if [[ -e $abs_src ]] ; then
       printf 'src already exists.\n'
       ls -l "$abs_src"
+      exit 1
    fi
 
-   printf '\033[37;1mmake local backup...\033[0m\n'
-   cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak"
+   printf '\033[37;1mcreating logfile\033[0m\n' >&2
+   local tmpfile=$( mktemp --tmpdir="${PROGDIR}/logs" log.XXX )
+   mv -v --backup='numbered' "$tmpfile" "$LOGFILE"
 
-   printf '\n\033[37;1massume ownership...\033[0m\n'
-   mkdir -vp "${abs_src%/*}"
-   mv -vn "$abs_dst" "$abs_src"
+   {  printf '\n\033[37;1mmake local backup...\033[0m\n' >&2
+      cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak"
 
-   printf '\n\033[37;1mlink back...\033[0m\n'
-   ln -sv "$abs_src" "$abs_dst"
+      printf '\n\033[37;1massume ownership...\033[0m\n' >&2
+      mkdir -vp "${abs_src%/*}"
+      mv -vn "$abs_dst" "$abs_src"
 
+      printf '\n\033[37;1mlink back...\033[0m\n' >&2
+      ln -sv "$abs_src" "$abs_dst"
+   } | tee -a "$LOGFILE"
+
+   DATA["$src"]="$rel_dst"
    store_data
 
    #printf '\n\033[37;1madd & commit...\033[0m\n'
    #$hg add "$abs_src"
    #$hg commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
+
+   printf '\n\033[32;1mdone.\033[0m\n' >&2
 }
 
 
@@ -185,7 +197,7 @@ function cmd_deploy {
    fi
 
    load_data
-   local dst="${MAP[$src]}"
+   local dst="${DATA[$src]}"
 
    if [[ ! $dst ]] ; then
       printf 'src not found in database\n'
@@ -233,15 +245,15 @@ case "$1" in
       usage 0 ;;
 
    # Regular commands.
-   add)
-      cmd_add "${@:2}" ;;
+   add) shift
+      cmd_add "$@" ;;
 
-   deploy)
-      cmd_deploy "${@:2}" ;;
+   deploy) shift
+      cmd_deploy "$@" ;;
 
-   tree)
+   tree) shift
       cd "$PROGDIR"
-      tree --prune --noreport -a -I .hg dotfiles ;;
+      tree --noreport --prune -a "$@" dotfiles ;;
 
    ls)
       sort -k2 "${DATABASE}" | column -t ;;
