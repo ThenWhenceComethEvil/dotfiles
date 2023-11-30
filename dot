@@ -161,47 +161,56 @@ function cmd_add {
 
    # Local backup -------------------------------------------------------------
    printf '\n\033[37;1m%s\033[0m\n'  'make local backup...'
-   cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak" &>> "$LOGFILE"
+   cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak" \
+      2>&1 | tee -a "$LOGFILE"
 
    # Assume ownership ---------------------------------------------------------
    printf '\n\033[37;1m%s\033[0m\n'  'assume ownership...'
-   mkdir -vp "${abs_src%/*}"     &>> "$LOGFILE"
-   mv -vn "$abs_dst" "$abs_src"  &>> "$LOGFILE"
+   mkdir -vp "${abs_src%/*}"     2>&1 | tee -a  "$LOGFILE"
+   mv -vn "$abs_dst" "$abs_src"  2>&1 | tee -a  "$LOGFILE"
 
    # Symlink back -------------------------------------------------------------
    printf '\n\033[37;1m%s\033[0m\n'  'link back...'
-   ln -sv "$abs_src" "$abs_dst"  &>> "$LOGFILE"
+   ln -sv "$abs_src" "$abs_dst"  2>&1 | tee -a "$LOGFILE"
 
    DATA["$src"]="$rel_dst"
    store_data
 
    # Sanity checks ------------------------------------------------------------
    printf '\n\033[37;1m%s\033[0m\n'  'sanity checks...'
+   local -i errors=0
 
-   if ! [[ -L $abs_dst ]] ; then                      # (1) is a symlink
+   if [[ -L $abs_dst ]] ; then                      # (1) is a symlink
       printf '\033[32;1m%s\033[0m'  '.'
    else
       printf '\033[31;1m%s\033[0m'  'X'
+      (( ++errors ))
    fi
 
-   if ! diff "${abs_dst}"{,.bak} >/dev/null ; then    # (2) .bak matches
+   if diff "${abs_dst}"{,.bak} >/dev/null ; then    # (2) .bak matches
       printf '\033[32;1m.\033[0m'
    else
       printf '\033[31;1mX\033[0m'
+      (( ++errors ))
    fi
 
-   if ! diff "$abs_dst" "$abs_src" >/dev/null ; then  # (3) dst/src match
+   if diff "$abs_dst" "$abs_src" >/dev/null ; then  # (3) dst/src match
       printf '\033[32;1m.\033[0m'
    else
       printf '\033[31;1mX\033[0m'
+      (( ++errors ))
    fi
 
    printf '\n'
+   (( errors ))
 
    # Commit result ------------------------------------------------------------
    #printf '\n\033[37;1madd & commit...\033[0m\n'
-   #hg --cwd ${PROGDIR} add "$abs_src"
-   #hg --cwd ${PROGDIR} commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
+   #chg --cwd ${PROGDIR} add "$abs_src"
+   #chg --cwd ${PROGDIR} commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
+
+   printf '\n\033[37;1m%s\033[0m\n'  'safe to remove'
+   printf '\033[37m%s\033[0m\n'      "${abs_src}.bak"
 
    printf '\n\033[32;1m%s\033[0m\n'  'done.'
 }
@@ -284,7 +293,7 @@ case "$1" in
       cmd_diff "$2" ;;
 
    hg)
-      hg -R "${PROGDIR}" "${@:2}" ;;
+      chg --cwd "${PROGDIR}" "${@:2}" ;;
 
    *) usage 1 ;;
 esac
