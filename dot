@@ -3,11 +3,10 @@
 # shellcheck disable=SC2155,SC2016,SC2295,SC2086
 #
 #--- TODO ----------------------------------------------------------------------
-# [ ] trap rollback on error
-#     - don't want to get half way through moving directories/files into the
-#       repo, crash, and not save the new database back
-#     - each time an action is taken, push a corresponding rollback command?
-#     - i.e., running ['mv', 'foo', 'bar'], pushes ['mv', 'bar', 'foo']
+# [ ] rollback on add/deploy errors
+#     - rate of errors is currently quite low
+#     - not worth wiring up complex rollbacks for something that does not oft
+#       occur
 # [ ] bash completion
 #
 #-------------------------------------------------------------------------------
@@ -162,29 +161,56 @@ function cmd_add {
       exit 1
    fi
 
-   printf '\033[37;1mcreating logfile\033[0m\n' >&2
+   # Setup --------------------------------------------------------------------
+   printf '\033[37;1m%s\033[0m\n'  'creating logfile'
    local tmpfile=$( mktemp --tmpdir="${PROGDIR}/logs" log.XXX )
    mv -v --backup='numbered' "$tmpfile" "$LOGFILE"
 
-   printf '\n\033[37;1mmake local backup...\033[0m\n' >&2
-   cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak" \
-      &>> "$LOGFILE"
+   # Local backup -------------------------------------------------------------
+   printf '\n\033[37;1m%s\033[0m\n'  'make local backup...'
+   cp -vrT --backup='existing' "$abs_dst" "${abs_dst}.bak" &>> "$LOGFILE"
 
-   printf '\n\033[37;1massume ownership...\033[0m\n' >&2
+   # Assume ownership ---------------------------------------------------------
+   printf '\n\033[37;1m%s\033[0m\n'  'assume ownership...'
    mkdir -vp "${abs_src%/*}"     &>> "$LOGFILE"
    mv -vn "$abs_dst" "$abs_src"  &>> "$LOGFILE"
 
-   printf '\n\033[37;1mlink back...\033[0m\n' >&2
+   # Symlink back -------------------------------------------------------------
+   printf '\n\033[37;1m%s\033[0m\n'  'link back...'
    ln -sv "$abs_src" "$abs_dst"  &>> "$LOGFILE"
 
    DATA["$src"]="$rel_dst"
    store_data
 
+   # Sanity checks ------------------------------------------------------------
+   printf '\n\033[37;1m%s\033[0m\n'  'sanity checks...'
+
+   if ! [[ -L $abs_dst ]] ; then                      # (1) is a symlink
+      printf '\033[32;1m%s\033[0m'  '.'
+   else
+      printf '\033[31;1m%s\033[0m'  'X'
+   fi
+
+   if ! diff "${abs_dst}"{,.bak} >/dev/null ; then    # (2) .bak matches
+      printf '\033[32;1m.\033[0m'
+   else
+      printf '\033[31;1mX\033[0m'
+   fi
+
+   if ! diff "$abs_dst" "$abs_src" >/dev/null ; then  # (3) dst/src match
+      printf '\033[32;1m.\033[0m'
+   else
+      printf '\033[31;1mX\033[0m'
+   fi
+
+   printf '\n'
+
+   # Commit result ------------------------------------------------------------
    #printf '\n\033[37;1madd & commit...\033[0m\n'
    #$hg add "$abs_src"
    #$hg commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
 
-   printf '\n\033[32;1mdone.\033[0m\n' >&2
+   printf '\n\033[32;1m%s\033[0m\n'  'done.'
 }
 
 
