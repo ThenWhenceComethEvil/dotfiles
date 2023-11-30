@@ -3,10 +3,6 @@
 # shellcheck disable=SC2155,SC2016,SC2295,SC2086
 #
 #--- TODO ----------------------------------------------------------------------
-# [ ] rollback on add/deploy errors
-#     - rate of errors is currently quite low
-#     - not worth wiring up complex rollbacks for something that does not oft
-#       occur
 # [ ] bash completion
 #
 #-------------------------------------------------------------------------------
@@ -48,14 +44,6 @@ function load_data {
 }
 
 
-function new_source {
-   local src="SOURCE_LIST_$(( ++_SOURCE_LIST_IDX ))"
-   declare -ga "$src"
-   declare -g SOURCE_LIST="$src"
-}
-
-
-# TODO: can be a bit risky, gotta make sure not to truncate the file if error.
 function store_data {
    local src dst
    for src in "${!DATA[@]}" ; do
