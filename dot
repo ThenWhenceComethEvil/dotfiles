@@ -10,18 +10,12 @@
 # [ ] bash completion
 #
 #-------------------------------------------------------------------------------
-
 set -eo pipefail
 
 declare -g  THIS=$( realpath "${BASH_SOURCE[0]}" )
 declare -g  PROGDIR="${THIS%/*}"
 declare -g  DATABASE="${PROGDIR}/database"
 declare -gA DATA=()   # { source -> dest }
-#declare -gA RDATA=()  # { dest -> source[] }
-#declare -g  SOURCE_LIST=
-#declare -gi _SOURCE_LIST_IDX=0
-## For easier diff functionality. If the destination is a file, exec `nvim -d`
-## for all sources that refer to the destination.
 
 touch "${DATABASE}" -a
 mkdir -p "${PROGDIR}/dotfiles"
@@ -29,14 +23,6 @@ mkdir -p "${PROGDIR}/dotfiles"
 mkdir -p "${PROGDIR}/logs"
 declare -g LOGFILE="${PROGDIR}/logs/log"
 
-declare -g hg="hg -R ${PROGDIR}"
-
-# PROGDIR/
-#  +-- database
-#  `-- dotfiles/
-#       +-- bash/
-#       |    `-- .bashrc
-#       `-- nvim/
 
 function usage {
    declare -i status="$1"
@@ -59,6 +45,13 @@ function load_data {
    while IFS=$'\t' read -r src dst ; do
       DATA["$src"]="$dst"
    done < "$DATABASE"
+}
+
+
+function new_source {
+   local src="SOURCE_LIST_$(( ++_SOURCE_LIST_IDX ))"
+   declare -ga "$src"
+   declare -g SOURCE_LIST="$src"
 }
 
 
@@ -207,8 +200,8 @@ function cmd_add {
 
    # Commit result ------------------------------------------------------------
    #printf '\n\033[37;1madd & commit...\033[0m\n'
-   #$hg add "$abs_src"
-   #$hg commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
+   #hg --cwd ${PROGDIR} add "$abs_src"
+   #hg --cwd ${PROGDIR} commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
 
    printf '\n\033[32;1m%s\033[0m\n'  'done.'
 }
@@ -260,7 +253,7 @@ function cmd_diff {
       fi
    done < "$DATABASE"
 
-   if (( ${#files[@]} )) ; then
+   if (( ${#files[@]} > 1 )) ; then
       exec nvim -d "${files[@]}" 
    fi
 }
@@ -281,14 +274,14 @@ case "$1" in
       cd "$PROGDIR"
       tree --noreport --prune -a "$@" dotfiles ;;
 
-   ls)
+   ls | list)
       sort -k2 "${DATABASE}" | column -t ;;
 
    validate)
       validate_database ;;
 
    diff)
-      cmd_diff "${@:2}" ;;
+      cmd_diff "$2" ;;
 
    hg)
       hg -R "${PROGDIR}" "${@:2}" ;;
