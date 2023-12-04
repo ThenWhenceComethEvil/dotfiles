@@ -1,7 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2207
 
-
 function __dot_deploy {
    local base
    base=$(realpath "$(which dot)")
@@ -15,7 +14,6 @@ function __dot_deploy {
 
    COMPREPLY=( $(compgen -W "${opts[*]}" -- "${curr}") )
 }
-
 
 function __dot {
    local curr="${COMP_WORDS[$COMP_CWORD]}"
