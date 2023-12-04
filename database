@@ -2,3 +2,4 @@ bash/laptop.bashrc          	.bashrc
 display/dunst/laptop.dunstrc	.config/dunst/dunstrc
 display/i3/laptop.config    	.config/i3/config
 display/polybar.laptop      	.config/polybar
+bash/inputrc                	.inputrc

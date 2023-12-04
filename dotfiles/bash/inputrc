@@ -1,0 +1,18 @@
+# ref.
+# https://man.archlinux.org/man/readline.3
+
+## Would like to have this enabled, but it's blocking. Can't do anything else
+## until the animation finishes.
+#set blink-matching-paren on
+
+"\C-p": history-search-backward
+"\C-n": history-search-forward
+
+## Difficult to see the `colored-completion-prefix` if this is on.
+#set colored-stats               on
+
+set colored-completion-prefix    on
+set show-all-if-ambiguous        on
+set show-all-if-unmodified       on
+set enable-bracketed-paste       on
+set mark-symlinked-directories   on
