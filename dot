@@ -24,12 +24,16 @@ function usage {
    declare -i status="$1"
    cat <<EOF
 
-usage: ${THIS##*/} [option] command
+usage: ${THIS##*/} <command>
 
 commands:
-   add FILE          assume ownership of \$FILE
-   deploy FILE       symlink owned \$FILE to host
+   add PATH NAME     own \$PATH as relative \$NAME
+   deploy NAME       symlink owned \$NAME to host
    ls                print owned files
+   diff PATH         vimdiff's multiple NAMEs for \$PATH
+   tree              \`tree dotfiles/\`
+   validate          assert NAMEs in database exist
+   hg ARGS           \`hg\` relative to this repo
 
 EOF
 exit "$status"
