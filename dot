@@ -198,8 +198,10 @@ function cmd_add {
 
    # Commit result ------------------------------------------------------------
    printf '\n\033[37;1madd & commit...\033[0m\n'
+   set -x
    hg --cwd ${PROGDIR} add "$abs_src"
-   hg --cwd ${PROGDIR} commit "$abs_src" "$DATABASE" -m "Add ${dst} as ${src}"
+   hg --cwd ${PROGDIR} commit "$abs_src" "$DATABASE" -m "Add ${dst/$HOME/} as ${src}"
+   set +x
 
    printf '\n\033[37;1m%s\033[0m\n'  'safe to remove'
    printf '\033[37m%s\033[0m\n'      "${abs_src}.bak"
