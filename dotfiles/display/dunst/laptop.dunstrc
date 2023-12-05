@@ -8,7 +8,7 @@ follow = mouse
 font = Aurelius Round Fixed 10
 
 width = 300
-height = 40
+height = 100
 offset = 9x35
 
 indicate_hidden = yes
@@ -19,8 +19,8 @@ shrink = yes
 # present (e.g. xcompmgr, compiz, etc.).
 transparency = 0
 
-separator_height = 2
-padding = 8
+separator_height = 1
+padding = 6
 horizontal_padding = 8
 
 # Defines width in pixels of frame around the notification window.
@@ -83,7 +83,7 @@ markup = full
 #   %n  progress value if set without any extra characters
 #   %%  Literal %
 # Markup is allowed
-format = "[%a]: <b>%s</b>\n%b"
+format = "[<i>%a</i>] <b>%s</b>\n\n%b"
 alignment = left
 word_wrap = yes
 ignore_newline = no
@@ -95,7 +95,7 @@ show_age_threshold = 60
 
 # When word_wrap is set to no, specify where to ellipsize long lines.
 # Possible values are "start", "middle" and "end".
-ellipsize = middle
+ellipsize = end
 
 stack_duplicates = true
 hide_duplicate_count = false
@@ -127,7 +127,7 @@ context = ctrl+grave
 background = "#181818"
 foreground = "#6a6a6a"
 frame_color = "#0d0d0d"
-timeout = 10
+timeout = 5
 
 [urgency_normal]
 background = "#181818"
@@ -137,6 +137,6 @@ timeout = 10
 
 [urgency_critical]
 background = "#181818"
-foreground = "#cfcfcf"
+foreground = "#ffffff"
 frame_color = "#572d41"
 timeout = 0
