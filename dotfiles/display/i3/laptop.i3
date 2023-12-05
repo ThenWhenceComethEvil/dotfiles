@@ -156,11 +156,12 @@ for_window [ class="feh"            ] floating enable
 for_window [ class="Bitwarden"      ] floating enable
 for_window [ class="Thunar"         ] floating enable
 
-for_window [ title="Wireshark · .*"      ] floating enable, border pixel 1, move position center
-for_window [ title="^neomutt$"           ] resize set 1800 1600, move position center
-for_window [ title="^pulsemixer$"        ] resize set 1200 500
-for_window [ title="^Plover$"            ] floating enable
-for_window [ title="Plover: Paper Tape"  ] floating enable
-for_window [ title="Plover: Suggestions" ] floating enable
+for_window [ title="Wireshark · .*"        ] floating enable, border pixel 1, move position center
+for_window [ title="^neomutt$"             ] resize set 1800 1600, move position center
+for_window [ title="^pulsemixer$"          ] resize set 1200 500
+for_window [ title="^Plover$"              ] floating enable
+for_window [ title="Plover: Paper Tape"    ] floating enable
+for_window [ title="Plover: Suggestions"   ] floating enable
+for_window [ title="calibre - Preferences" ] border pixel 1
 #}}}
 #}}}
