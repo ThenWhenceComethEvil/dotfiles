@@ -1,0 +1,16 @@
+{
+  "conjure": { "branch": "master", "commit": "58c46d1f4999679659a5918284b574c266a7ac83" },
+  "lazy.nvim": { "branch": "main", "commit": "96584866b9c5e998cbae300594d0ccfd0c464627" },
+  "mason-lspconfig.nvim": { "branch": "main", "commit": "f522b5439bedac0225daf8d2fedb5039b59e83ee" },
+  "mason.nvim": { "branch": "main", "commit": "41e75af1f578e55ba050c863587cffde3556ffa6" },
+  "nvim-lspconfig": { "branch": "master", "commit": "daaf00a77805e113acf8ccc02dd8c3403d691683" },
+  "nvim-snippy": { "branch": "master", "commit": "7c8f18e90cad4f56c4e22a49101668735639f286" },
+  "nvim-treesitter": { "branch": "master", "commit": "7da3cb6323d1e1fbfc4d7dc05cac74946458b8a0" },
+  "nvim-treesitter-context": { "branch": "master", "commit": "bf4d15ee4e96ff5201f16a4ed14443670662eb90" },
+  "nvim-treesitter-refactor": { "branch": "master", "commit": "65ad2eca822dfaec2a3603119ec3cc8826a7859e" },
+  "paredit": { "branch": "master", "commit": "3609c637d1be6bfea21dc4930f0901f2430d665b" },
+  "playground": { "branch": "master", "commit": "ba48c6a62a280eefb7c85725b0915e021a1a0749" },
+  "slimv": { "branch": "master", "commit": "f4775f044cbb28ff4a444143cd2e6712b3694f21" },
+  "toggleterm.nvim": { "branch": "main", "commit": "c80844fd52ba76f48fabf83e2b9f9b93273f418d" },
+  "undotree": { "branch": "master", "commit": "36ff7abb6b60980338344982ad4cdf03f7961ecd" }
+}

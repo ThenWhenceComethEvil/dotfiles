@@ -1,0 +1,65 @@
+-- vim: ft=lua
+--
+-- When beginning to work on this, I noticed some elements of the UI were
+-- slowing down a lot. Making a split then resizing it was unbearably slow.
+-- As was some elements of editing (using `o' to insert a new line). Don't
+-- know if it's some autocmd I made, or something that's running too often.
+--
+-- Turns out it was something shitty in the treesitter `comment' parser. Didn't
+-- like neovim's --[[...]] style comments.
+
+vim.opt.laststatus = 2
+vim.opt.showmode   = false
+vim.opt.showcmdloc = 'statusline'
+
+local mode_map = {
+ 	['n']  = '%#Statusline_Mode_Normal# NORMAL ',
+	['i']  = '%#Statusline_Mode_Insert# INSERT ',
+	['s']  = '%#Statusline_Mode_Select# SELECT ',
+	['r']  = '%#Statusline_Mode_Replace# REPLACE ',
+	['c']  = '%#Statusline_Mode_Command# COMMAND ',
+	['t']  = '%#Statusline_Mode_Terminal# TERMINAL ',
+	['v']  = '%#Statusline_Mode_Visual# VISUAL ',
+	[''] = '%#Statusline_Mode_Visual# VISUAL ',
+}
+
+function Statusline_Current_Mode () 
+	local mode = string.lower(vim.api.nvim_get_mode().mode)
+	return mode_map[mode] or ''
+end
+
+local group_id = vim.api.nvim_create_augroup('Statusline', {
+   clear = true -- this is required, but defaults to `true`
+})
+
+vim.api.nvim_create_autocmd({'WinEnter', 'BufEnter'}, {
+   group    = group_id,
+   pattern  = '*',
+   callback = function()
+      vim.wo.statusline = table.concat({
+         -- Mode (INSERT/NORMAL/...)
+         '%{%v:lua.Statusline_Current_Mode()%}',
+
+         -- Cursor line:column information.
+         '%#Statusline_Cursor# ',
+         '%4.l:%-3.c',
+
+         -- Filename.
+         '%#NOHL# ',
+         '%f%( [%R%H]%)%( %M%)',
+
+         -- showcmdloc, filetype, file%
+         '%=%( %S %) ',
+         '%#Statusline_Filetype# ',
+         '%{&filetype} %3.p%%',
+      })
+   end
+})
+
+vim.api.nvim_create_autocmd({'WinLeave', 'BufLeave'}, {
+   group    = group_id,
+   pattern  = '*',
+   callback = function()
+      vim.wo.statusline = ' %F%( [%R%H]%)%( %M%)'
+   end
+})

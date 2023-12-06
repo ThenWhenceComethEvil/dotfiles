@@ -1,0 +1,24 @@
+snippet #!
+	#!/usr/bin/env bash
+
+snippet if
+	if [[ $1 ]] ; then
+		$2
+	fi
+
+snippet for
+	local $1
+	for ${1:key} in "\${${2:array}[@]}" ; do
+		$3
+	done
+
+snippet ifor
+	local $1
+	for ${1:key} in "\${!${2:array}[@]}" ; do
+		local ${3:value}="${${2:array}["\$$1"]}"
+		$4
+	done
+
+snippet PROGDIR=  ""  Ab
+	declare -g PROGDIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd )
+	$0
