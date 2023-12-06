@@ -28,10 +28,12 @@ function __dot {
       hg
    )
 
-   case "${COMP_WORDS[1]}" in
-      '')
-         COMPREPLY=( $(compgen -W "${cmds[*]}" -- "${curr}") ) ;;
+   if (( COMP_CWORD == 1 )) ; then
+      COMPREPLY=( $(compgen -W "${cmds[*]}" -- "${curr}") )
+      return
+   fi
 
+   case "${COMP_WORDS[1]}" in
       add)
          compopt -o default ;;
 
