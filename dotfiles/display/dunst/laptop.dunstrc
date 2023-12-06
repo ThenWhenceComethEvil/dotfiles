@@ -119,8 +119,10 @@ always_run_script = true
 title = Dunst
 class = Dunst
 
-close = ctrl+space
-context = ctrl+grave
+close = shift+ctrl+comma
+context = shift+ctrl+period
+mouse_left_click = do_action
+mouse_right_click = context,close_current
 
 
 [urgency_low]
