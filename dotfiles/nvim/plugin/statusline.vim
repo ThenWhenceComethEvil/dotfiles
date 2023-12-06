@@ -1,9 +1,9 @@
 " vim: ft=vim
 "
-" Originally written in Lua (../lua/ui.lua), but was having some trouble in
-" which the UI would periodically get sluggish. As if it was trying to run a
-" stupid number of events on every update. Was super hard to diagnose when/why
-" it was happening.
+" Originally written in Lua (disable/statusline.lua.disable), but was having
+" some trouble in which the UI would periodically get sluggish. As if it was
+" trying to run a stupid number of events on every update. Was super hard to
+" diagnose when/why it was happening.
 "
 " Until such time as I need anything more fancy, this will serve nicely.
 "

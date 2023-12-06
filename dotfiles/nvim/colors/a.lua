@@ -3,7 +3,7 @@
 --
 --[[
 
-Principal is a refinement of my old colorscheme.
+Refinement of my old colorscheme(s).
 
    (1) Colors must aid in understanding of the text
 
@@ -73,16 +73,20 @@ Monochrome:
 bg:
  #000000
  #0d0d0d
- #121212
+ #121212 <-- bg[0]
  #181818
  #222222
  #282828
 fg:
  #424242
  #6a6a6a
- #a0a0a0
+ #a0a0a0 <-- fg[0]
  #cfcfcf
  #ffffff
+
+TODO: I've found #181818 is somehow a bit too much of a value increase from
+      the default background color of #121212. Can maybe decrease the steps by
+      30% or so.
 
 --]]
 
