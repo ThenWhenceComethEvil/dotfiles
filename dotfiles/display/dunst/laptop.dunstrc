@@ -129,7 +129,7 @@ mouse_right_click = context,close_current
 background = "#181818"
 foreground = "#6a6a6a"
 frame_color = "#0d0d0d"
-timeout = 5
+timeout = 10
 
 [urgency_normal]
 background = "#181818"

@@ -30,6 +30,7 @@ opt.expandtab      = true
 opt.shiftround     = true
 opt.breakindent    = true
 opt.breakindentopt = 'sbr'
+opt.joinspaces     = false
 opt.wildmenu       = true
 opt.wildmode       = 'longest,full'
 opt.wildoptions    = 'pum'
@@ -54,4 +55,12 @@ autocmd('TextYankPost',  {
    callback = function()
       vim.highlight.on_yank({ higroup = 'IncSearch', timeout = '200' })
    end
+})
+
+-- Preview window annoyingly stays open after completion is completed.
+autocmd('CompleteDone', {
+   pattern = '*',
+   callback = function()
+      vim.cmd.pclose()
+   end,
 })

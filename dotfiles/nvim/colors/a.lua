@@ -157,7 +157,11 @@ for idx,tbl in ipairs({
 }) do
    setmetatable(tbl, {
       -- TODO: Add traceback. Find where this originated.
-      __index = function (tbl, key) error() end
+      __index = function (tbl, key)
+         error("Invalid index: " .. key, 2)
+	 -- Second parameter is the hierarchy. `2' means one level up from this
+	 -- function. ref. https://www.lua.org/pil/8.5.html
+      end
    })
 end
 
@@ -255,6 +259,7 @@ for name, highlight in pairs({
    PreProc     = { fg = fg_mono[-1] },
    Define      = { fg = fg_mono[-1] },
    Operator    = { fg = fg_mono[-1] },
+   Delimiter   = { fg = fg_mono[-2] },
    
    -- My statusline groups.
    Statusline_Cursor       = { fg = fg_mono[1], bg = bg_mono[1], bold = true },
@@ -272,9 +277,9 @@ for name, highlight in pairs({
    ['@field']       = { fg = fg },
    ['@variable']    = { fg = fg },
    ['@boolean']     = { fg = fg_mono[2] },
-   ['@bracket']     = { fg = fg_mono[-2] },
-   ['@punctuation'] = { link = '@bracket' },
-   ['@constructor'] = { link = '@bracket' },
+   ['@bracket']     = { link = 'Delimiter' },
+   ['@punctuation'] = { link = '@bracket'  },
+   ['@constructor'] = { link = '@bracket'  },
 
    --- Language-specific  ------------------------------------------------------
    ['@variable.bash'] = { fg = fg_color[2] },

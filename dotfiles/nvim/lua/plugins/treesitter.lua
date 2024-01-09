@@ -29,6 +29,7 @@ return {
             "bash",
             "lua",
             "erlang",
+            "elixir",
             "python",
             "toml",
          },

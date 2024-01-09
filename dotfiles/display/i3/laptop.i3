@@ -135,6 +135,7 @@ bindsym Mod1+b        exec ~/bin/bt_rofi                                    #}}}
 # `alacritty --class float`
 for_window [ class="float" ] floating enable
 
+for_window [ instance="df"              ] resize set 3000 1600, move position center
 for_window [ instance="pinentry-gtk-2"  ] floating enable, border pixel 1
 for_window [ instance="Msgcompose"      ] floating enable
 for_window [ instance="pavucontrol"     ] floating enable
@@ -150,11 +151,12 @@ for_window [ class="qutebrowser"    ] border pixel 1
 for_window [ class="brogue"         ] floating enable, border pixel 1
 for_window [ class="Dwarf_Fortress" ] floating enable, border pixel 1
 for_window [ class="Anki"           ] floating enable, border pixel 1
-for_window [ class="calibre"        ] floating enable
+for_window [ class="calibre"        ] floating enable, border pixel 1
 for_window [ class="mpv"            ] floating enable
 for_window [ class="feh"            ] floating enable
 for_window [ class="Bitwarden"      ] floating enable
 for_window [ class="Thunar"         ] floating enable
+for_window [ class="fontforge"      ] floating enable
 
 for_window [ title="Wireshark · .*"        ] floating enable, border pixel 1, move position center
 for_window [ title="^neomutt$"             ] resize set 1800 1600, move position center

@@ -40,3 +40,6 @@ vim.diagnostic.config({
 
 -- Languages.
 lspconfig.bashls.setup {}
+lspconfig.elixirls.setup({
+   cmd = { '/home/aurelius/.local/share/nvim/mason/bin/elixir-ls' }
+})
